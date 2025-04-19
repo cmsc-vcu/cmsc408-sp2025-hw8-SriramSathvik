@@ -275,10 +275,12 @@ group by `Income Group`
 ## you will be scored on the number of records returned and the value(s) 
 ## in the first column.
 
-run_sql_and_return_html(cnx,"""
-select "doh!" as "Homer says ..." from dual
+run_sql_and_return_df(cnx,"""
+select `Short Name`, `Income Group` from wdi_country
+where `Income Group` is null
+order by
+`Short Name`;
 """)
-
 ```
 
 ## Task 13
@@ -290,15 +292,23 @@ select "doh!" as "Homer says ..." from dual
 ## NOTE - if you get this wrong, all subsequent tables will be wrong!
 
 execute_ddl(cnx,"""
+update
+  wdi_country
+set
+  `Income Group` = 'High income'
+where
+  `Short Name` = 'Venezuela';
+commit;
 """)
-
 
 ```
 ```{python}
 ## Now, display the country again to verify the change stuck!
 
-run_sql_and_return_html(cnx,"""
-select "doh!" as "Homer says ..." from dual
+run_sql_and_return_df(cnx,"""
+select `Short Name`,`Income Group` from wdi_country
+where
+  `Short Name` = 'Venezuela';
 """)
 
 ```

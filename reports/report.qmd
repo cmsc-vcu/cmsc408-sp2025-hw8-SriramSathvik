@@ -73,7 +73,7 @@ select
   *
 from 
   world_bank_data.wdi_country
-limit 5
+limit 10
 """)
 
 ```
@@ -91,7 +91,12 @@ List all non-countries.
 ## (skills: select, where)
 
 run_sql_and_return_html(cnx,"""
-select "doh!" as "Homer says ..." from dual
+select 
+  'Long Name', 'Region'
+from
+    world_bank_data.wdi_country
+where
+    region is NULL
 """)
 ```
 

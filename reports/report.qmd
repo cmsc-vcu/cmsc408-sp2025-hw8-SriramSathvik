@@ -226,8 +226,10 @@ where `Region`='North America'
 ## What region contains Qatar?  List the region, country short name and full name
 ## (skills: select, where)
 
-run_sql_and_return_html(cnx,"""
-select "doh!" as "Homer says ..." from dual
+run_sql_and_return_df(cnx,"""
+select `Long Name`, `Region`
+from wdi_country
+where `Short Name`='Qatar'
 """)
 
 ```
@@ -240,8 +242,11 @@ select "doh!" as "Homer says ..." from dual
 ## where the abbr and wb_abbr are different.
 ## (skills: select, where, order by)
 
-run_sql_and_return_html(cnx,"""
-select "doh!" as "Homer says ..." from dual
+run_sql_and_return_df(cnx,"""
+select `Country Code`,`Short Name`, `2-alpha code`, `WB-2 code`, `Region`
+from wdi_country
+where
+`2-alpha code` <> `WB-2 code`
 """)
 
 ```
@@ -254,8 +259,9 @@ select "doh!" as "Homer says ..." from dual
 ## income category in descending order of most countries to least.
 ## (skills: select, aggregate, group by, order by)
 
-run_sql_and_return_html(cnx,"""
-select "doh!" as "Homer says ..." from dual
+run_sql_and_return_df(cnx,"""
+select `Income Group` from wdi_country
+group by `Income Group`
 """)
 
 ```

@@ -92,7 +92,7 @@ List all non-countries.
 
 run_sql_and_return_html(cnx,"""
 select 
-  'Long Name', 'Region'
+  `Long Name`
 from
     world_bank_data.wdi_country
 where
@@ -115,12 +115,12 @@ Create your own copy of WDI_Country containing just countries.
 # drop table
 execute_ddl(cnx,"""
 drop table if exists wdi_country;
-drop table if exists countries;
-drop table if exists departments;
 drop table if exists emp_details_view;
 drop table if exists employees;
+drop table if exists departments;
 drop table if exists jobs;
 drop table if exists locations;
+drop table if exists countries;
 drop table if exists regions;
 """)
 ```
@@ -140,7 +140,7 @@ where
 
 ```{python}
 # show number of records
-run_sql_and_return_df(cnx,"""
+run_sql_and_return_html(cnx,"""
 select count(*) from wdi_country
 """)
 ```
@@ -152,7 +152,7 @@ According to the World Bank, in 2020 there were how many countries in the world?
 ```{python}
 ## (skills: select, aggregate)
 
-run_sql_and_return_df(cnx,"""
+run_sql_and_return_html(cnx,"""
 select count(*) from wdi_country;
 """)
 
@@ -169,7 +169,7 @@ What are all unique values of region in the wdi_country table?
 ## (there are several possible ways to code this in SQL)
 ## (skills: select, aggregate, order by)
 
-run_sql_and_return_df(cnx,"""
+run_sql_and_return_html(cnx,"""
 select
   `Region`
 from
@@ -190,7 +190,7 @@ How many countries are in each region?
 ## How many countries are in each region?
 ## (skills: select, aggregate, group by, order by)
 
-run_sql_and_return_df(cnx,"""
+run_sql_and_return_html(cnx,"""
 select
   `Region` ,count(*) as "Count"
 from
@@ -200,6 +200,7 @@ group by
 order by
   `Count` desc
 """)
+
 
 ```
 
@@ -211,7 +212,7 @@ List the country full names and regions for all countries in north america.
 ## List the country full names and regions for all countries in north america
 ## (skills: select, where, order by)
 
-run_sql_and_return_df(cnx,"""
+run_sql_and_return_html(cnx,"""
 select `Long Name`, `Region`
 from wdi_country
 where `Region`='North America'
@@ -226,8 +227,8 @@ where `Region`='North America'
 ## What region contains Qatar?  List the region, country short name and full name
 ## (skills: select, where)
 
-run_sql_and_return_df(cnx,"""
-select `Long Name`, `Region`
+run_sql_and_return_html(cnx,"""
+select `Region`, `Short Name`, `Long Name`
 from wdi_country
 where `Short Name`='Qatar'
 """)
@@ -242,7 +243,7 @@ where `Short Name`='Qatar'
 ## where the abbr and wb_abbr are different.
 ## (skills: select, where, order by)
 
-run_sql_and_return_df(cnx,"""
+run_sql_and_return_html(cnx,"""
 select `Country Code`,`Short Name`, `2-alpha code`, `WB-2 code`, `Region`
 from wdi_country
 where
@@ -259,8 +260,8 @@ where
 ## income category in descending order of most countries to least.
 ## (skills: select, aggregate, group by, order by)
 
-run_sql_and_return_df(cnx,"""
-select `Income Group` from wdi_country
+run_sql_and_return_html(cnx,"""
+select `Income Group`, count(*) as "Count" from wdi_country
 group by `Income Group`
 """)
 
@@ -275,8 +276,10 @@ group by `Income Group`
 ## you will be scored on the number of records returned and the value(s) 
 ## in the first column.
 
-run_sql_and_return_df(cnx,"""
-select `Short Name`, `Income Group` from wdi_country
+run_sql_and_return_html(cnx,"""
+select `Short Name`, `Income Group`, count(*) over() as "Count"
+from 
+  wdi_country
 where `Income Group` is null
 order by
 `Short Name`;
@@ -305,12 +308,13 @@ commit;
 ```{python}
 ## Now, display the country again to verify the change stuck!
 
-run_sql_and_return_df(cnx,"""
-select `Short Name`,`Income Group` from wdi_country
+run_sql_and_return_html(cnx,"""
+select `Short Name`,`Income Group`, count(*) over() as "Count"
+from 
+  wdi_country
 where
   `Short Name` = 'Venezuela';
 """)
-
 ```
 
 ## Task 14

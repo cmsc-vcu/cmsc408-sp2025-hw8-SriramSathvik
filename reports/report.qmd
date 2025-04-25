@@ -2,7 +2,7 @@
 title: Homework 8 - World Bank Analysis
 ---
 
-GITHUB URL:  <https://github.com/cmsc-vcu/cmsc408-sp2025-hw8-jleonard99>
+GITHUB URL:  <https://github.com/cmsc-vcu/cmsc408-sp2025-hw8-SriramSathvik>
 
 
 # Problem Background
@@ -35,7 +35,6 @@ from
 where
   table_schema in ('world_bank_data')
 """)
-
 ```
 
 # Exercises
@@ -56,7 +55,6 @@ select
 from
   world_bank_data.wdi_country
 """)
-
 ```
 
 ## Task 2
@@ -73,11 +71,9 @@ select
   *
 from 
   world_bank_data.wdi_country
-limit 10
+limit 5
 """)
-
 ```
-
 
 ## Task 3
 
@@ -114,14 +110,23 @@ Create your own copy of WDI_Country containing just countries.
 
 # drop table
 execute_ddl(cnx,"""
-drop table if exists wdi_country;
-drop table if exists emp_details_view;
-drop table if exists employees;
-drop table if exists departments;
-drop table if exists jobs;
-drop table if exists locations;
-drop table if exists countries;
-drop table if exists regions;
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS countries;
+DROP TABLE IF EXISTS departments;
+DROP TABLE IF EXISTS emp_details_view;
+DROP TABLE IF EXISTS employees;
+DROP TABLE IF EXISTS job_grades;
+DROP TABLE IF EXISTS job_history;
+DROP TABLE IF EXISTS jobs;
+DROP TABLE IF EXISTS locations;
+DROP TABLE IF EXISTS people;
+DROP TABLE IF EXISTS peopleroles;
+DROP TABLE IF EXISTS peopleskills;
+DROP TABLE IF EXISTS regions;
+DROP TABLE IF EXISTS roles;
+DROP TABLE IF EXISTS skills;
+DROP TABLE IF EXISTS wdi_country;
+SET FOREIGN_KEY_CHECKS = 1;
 """)
 ```
 
@@ -155,7 +160,6 @@ According to the World Bank, in 2020 there were how many countries in the world?
 run_sql_and_return_html(cnx,"""
 select count(*) from wdi_country;
 """)
-
 ```
 
 ## Task 6
@@ -179,7 +183,6 @@ group by
 order by
   `Region`
 """)
-
 ```
 
 ## Task 7
@@ -200,8 +203,6 @@ group by
 order by
   `Count` desc
 """)
-
-
 ```
 
 ## Task 8
@@ -217,7 +218,6 @@ select `Long Name`, `Region`
 from wdi_country
 where `Region`='North America'
 """)
-
 ```
 
 ## Task 9
@@ -232,7 +232,6 @@ select `Region`, `Short Name`, `Long Name`
 from wdi_country
 where `Short Name`='Qatar'
 """)
-
 ```
 
 ## Task 10
@@ -249,7 +248,6 @@ from wdi_country
 where
 `2-alpha code` <> `WB-2 code`
 """)
-
 ```
 
 ## Task 11
@@ -264,7 +262,6 @@ run_sql_and_return_html(cnx,"""
 select `Income Group`, count(*) as "Count" from wdi_country
 group by `Income Group`
 """)
-
 ```
 
 ## Task 12
@@ -303,7 +300,6 @@ where
   `Short Name` = 'Venezuela';
 commit;
 """)
-
 ```
 ```{python}
 ## Now, display the country again to verify the change stuck!
@@ -326,9 +322,17 @@ where
 ## (skills: select, aggregate, group by, order by)
 
 run_sql_and_return_html(cnx,"""
-select "doh!" as "Homer says ..." from dual
+select
+  `Region`,
+  `Income Group`,
+  count(*) as "No. of Countries"
+from
+  wdi_country
+group by
+  `Region`, `Income Group`
+order by
+  `Region`, `Income Group`
 """)
-
 ```
 
 ## Task 15
@@ -346,23 +350,21 @@ select "doh!" as "Homer says ..." from dual
 ## and a column for the row totals.
 ## (skills: select, aggregate, group by, nested query)
 
-run_sql_and_return_html(cnx,"""
-select
+run_sql_and_return_html(cnx, """
+SELECT
   `Region`,
-  count(case when `Income Group` = 'High income' then 1 end) as "High income",
-  count(case when `Income Group` = 'Upper middle income' then 1 end) as "Upper middle income",
-  count(case when `Income Group` = 'Lower middle income' then 1 end) as "Lower middle income",
-  count(case when `Income Group` = 'Low income' then 1 end) as "Low income",
-  count(case when `Income Group` is null then 1 end) as "Other",
-  count(*) as "Row Total"
-from
+  COUNT(CASE WHEN `Income Group` = 'High income' THEN 1.0 END) * 1.0 AS "High income",
+  COUNT(CASE WHEN `Income Group` = 'Upper middle income' THEN 1.0 END) * 1.0 AS "Upper middle income",
+  COUNT(CASE WHEN `Income Group` = 'Lower middle income' THEN 1.0 END) * 1.0 AS "Lower middle income",
+  COUNT(CASE WHEN `Income Group` = 'Low income' THEN 1.0 END) * 1.0 AS "Low income",
+  COUNT(CASE WHEN `Income Group` IS NOT NULL THEN 1.0 END) * 1.0 AS "Row Total"
+FROM
   wdi_country
-group by
+GROUP BY
   `Region`
-order by
+ORDER BY
   `Region`
 """)
-
 ```
 
 ## Task 16
@@ -394,7 +396,6 @@ order by
   count(*) desc
 limit 1
 """)
-
 ```
 
 ## Task 17
@@ -423,7 +424,6 @@ where
 order by
   `Short Name`
 """)
-
 ```
 
 ## Task 18
@@ -447,27 +447,39 @@ order by
 
 run_sql_and_return_html(cnx,"""
 with all_combinations as (
-  select distinct r.`Region`, i.`Income Group`
+  select 
+    r.`Region`, 
+    i.`Income Group`
   from
-    (select distinct `Region` from wdi_country) r,
-    (select distinct `Income Group` from wdi_country) i
+    (select distinct `Region` from wdi_country where `Region` is not null) r
+  cross join
+    (select distinct `Income Group` from wdi_country where `Income Group` is not null) i
 ),
-existing_combinations as (
-  select distinct `Region`, `Income Group`
-  from wdi_country
+actual_counts as (
+  select 
+    `Region`, 
+    `Income Group`, 
+    count(*) as Count
+  from 
+    wdi_country
+  where 
+    `Region` is not null and `Income Group` is not null
+  group by 
+    `Region`, `Income Group`
 )
-select
-  a.`Region`,
-  a.`Income Group`
-from
-  all_combinations a
-left join
-  existing_combinations e
-  on a.`Region` = e.`Region` and a.`Income Group` = e.`Income Group`
-where
-  e.`Region` is null
-order by
-  a.`Region`, a.`Income Group`
+select 
+  ac.`Region`,
+  ac.`Income Group`,
+  0 as Count
+from 
+  all_combinations ac
+left join 
+  actual_counts acnt
+  on ac.`Region` = acnt.`Region` and ac.`Income Group` = acnt.`Income Group`
+where 
+  acnt.`Region` is null
+order by 
+  ac.`Region`, ac.`Income Group`
 """)
 ```
 
@@ -537,7 +549,6 @@ from
 order by
   b.`Region`, b.`Income Group`
 """)
-
 ```
 
 ## Task 20
@@ -562,21 +573,20 @@ grand_total as (
   select count(*) as total_count from wdi_country
 )
 select
-  `Region`,
-  round(100.0 * sum(case when `Income Group` = 'High income' then country_count end) / g.total_count, 2) as "High income",
-  round(100.0 * sum(case when `Income Group` = 'Upper middle income' then country_count end) / g.total_count, 2) as "Upper middle income",
-  round(100.0 * sum(case when `Income Group` = 'Lower middle income' then country_count end) / g.total_count, 2) as "Lower middle income",
-  round(100.0 * sum(case when `Income Group` = 'Low income' then country_count end) / g.total_count, 2) as "Low income",
-  round(100.0 * sum(case when `Income Group` is null then country_count end) / g.total_count, 2) as "Other",
-  round(100.0 * sum(country_count) / g.total_count, 2) as "Row Total %"
+  b.`Region`,
+  round(100.0 * sum(case when b.`Income Group` = 'High income' then country_count else 0 end) / g.total_count, 2) as "High income",
+  round(100.0 * sum(case when b.`Income Group` = 'Upper middle income' then country_count else 0 end) / g.total_count, 2) as "Upper middle income",
+  round(100.0 * sum(case when b.`Income Group` = 'Lower middle income' then country_count else 0 end) / g.total_count, 2) as "Lower middle income",
+  round(100.0 * sum(case when b.`Income Group` = 'Low income' then country_count else 0 end) / g.total_count, 2) as "Low income",
+  round(100.0 * sum(country_count) / g.total_count, 2) as "Row Total"
 from
-  base, grand_total g
+  base b
+  cross join grand_total g
 group by
-  `Region`, g.total_count
+  b.`Region`, g.total_count
 order by
-  `Region`
+  b.`Region`
 """)
-
 ```
 
 ## Task 21
@@ -592,6 +602,9 @@ run_sql_and_return_html(cnx,"""
 with income_counts as (
   select `Income Group`, count(*) as country_count
   from wdi_country
+  where `Income Group` in (
+    'High income', 'Upper middle income', 'Lower middle income', 'Low income'
+  )
   group by `Income Group`
 ),
 total as (
@@ -601,14 +614,13 @@ select
   i.`Income Group`,
   i.country_count,
   t.total_count,
-  round(100.0 * i.country_count / t.total_count, 2) as percent_of_total
+  cast(100.0 * i.country_count / t.total_count as decimal(4,1)) as percent_of_total
 from
   income_counts i,
   total t
 order by
   i.country_count desc
 """)
-
 ```
 
 
@@ -616,26 +628,19 @@ order by
 
 1. Reflect on the SQL skills you used throughout these exercises. Which skills do you feel most confident in, and which do you think need more practice? How has this assignment helped you build or reinforce specific SQL competencies?
 
-( response goes here)
+The skills I am most confident in is making SQL that limits the number of data printes and and what data to be printed. I thnk I need more practice in is more in where core skill as I struggled. This assignement helped me start to buld more advanced SQL skills.
 
 2. Problem-Solving Approach: Describe your approach to tackling the more complex tasks (like Tasks 18, 23, and 24). How did you break down these problems, and what steps did you take when you encountered challenges? How would you approach a similar problem differently in the future?
 
-( response goes here)
+I started to break down the problem into smaller parts like filtering the data, then grouping it and then testing the output if I was getting errors I would test eah parts individually some parts I had to use google, notes, and lecture to understand what I had to do as I was confused in some parts.
 
 
 3. Learning Takeaways: Consider the overall learning experience from this assignment. What were the biggest takeaways about working with SQL for data analysis and transformation? How do you think these skills will apply in real-world scenarios or future coursework?
 
-( response goes here)
+The biggest takeaway for this assignement is about thinking logically to extract information from data and the rules to use query as structure and order in query really matters. I think that this will help me in real world if I am in statistics as you have to deal with a lols of data
 
 
 # README
-
-A quality README is an important part of EVERY project. Using the Quarto *include* command we're including a copy of your README in the project report so that a human can evaluate it.
-
-Make sure that you edit the README so that it's explanatory!  Note that you don't need a readme within the *reports* folder for this assignment. We're only
-focused on the root *README.md*.
-
-[Here is some info](https://www.freecodecamp.org/news/how-to-write-a-good-readme-file/) on how to write a good README!
 
 ::: {style="background:lightgray; margin-left:20px; border-top: 3px solid black; border-bottom: 3px solid black; padding-left:20px; padding-right:20px"}
 {{< include ../README.md >}}
